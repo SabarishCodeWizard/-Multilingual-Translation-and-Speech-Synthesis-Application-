@@ -143,9 +143,25 @@ def home():
     
     # Check if the user has accepted terms
     if not session.get('accepted_terms'):
+        
         return redirect(url_for('terms'))  # Redirect to terms page if not accepted
     
     return render_template('home.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.json['email']
+        id_token = request.json['idToken']
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            session['user_email'] = decoded_token['email']
+            session['accepted_terms'] = False  # Ensure terms are not accepted initially
+            return jsonify({"message": "Login successful!", "redirect": url_for('terms')}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 401
+    return render_template('login.html')
 
 
 @app.route('/translator', methods=['GET', 'POST'])
@@ -321,19 +337,6 @@ def send_thank_you_email(user_email, user_name):
         print(f"Failed to send email: {str(e)}")
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.json['email']
-        id_token = request.json['idToken']
-        try:
-            decoded_token = auth.verify_id_token(id_token)
-            session['user_email'] = decoded_token['email']
-            session['accepted_terms'] = False  # Ensure terms are not accepted initially
-            return jsonify({"message": "Login successful!", "redirect": url_for('terms')}), 200
-        except Exception as e:
-            return jsonify({"error": str(e)}), 401
-    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
